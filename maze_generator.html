@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Generator v5</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary-color: #64748b;
+            --accent-color: #10b981;
+            --danger-color: #ef4444;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --text-muted: #6b7280;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+            align-items: start;
+        }
+
+        @media (max-width: 800px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            transition: transform 0.2s ease;
+        }
+
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .step-group {
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 20px;
+        }
+
+        .step-group:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .step-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-number {
+            background: var(--primary-color);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        /* Form Elements */
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+
+            file-selector-button {
+                background-color: var(--bg-color);
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                padding: 6px 12px;
+                margin-right: 10px;
+                cursor: pointer;
+                transition: background-color 0.2s;
+                font-family: inherit;
+            }
+
+            file-selector-button:hover {
+                background-color: #e5e7eb;
+            }
+        }
+
+        .range-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-weight: 700;
+            color: var(--primary-color);
+            min-width: 30px;
+            text-align: right;
+        }
+
+        .helper-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            border: 1px solid #d1d5db;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            padding: 8px;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: var(--bg-color);
+            border-color: #9ca3af;
+        }
+
+        .btn-accent {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-accent:hover:not(:disabled) {
+            background-color: #059669;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background-color: #dc2626;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* Canvas Area */
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+            background-color: #fafafa;
+            border: 2px dashed #e5e7eb;
+            border-radius: var(--border-radius);
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 80vh;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        /* Alert Box */
+        .alert-box {
+            background-color: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-top: 16px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .controls-panel,
+            header,
+            .placeholder-text {
+                display: none !important;
+            }
+
+            .main-container {
+                display: block;
+                margin: 0;
+            }
+
+            .card {
+                box-shadow: none;
+                padding: 0;
+            }
+
+            .canvas-container {
+                border: none;
+                min-height: auto;
+                display: block;
+                text-align: center;
+            }
+
+            canvas {
+                max-width: 100%;
+                max-height: 100vh;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Maze Generator v5</h1>
+        <p class="subtitle">お気に入りの画像を迷路に変換します</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Left Panel: Controls -->
+        <div class="card controls-panel">
+
+            <!-- Step 1: Image -->
+            <div class="step-group">
+                <div class="step-title"><span class="step-number">1</span> 画像を選択</div>
+                <div class="file-input-wrapper">
+                    <input type="file" id="imageLoader" accept="image/*">
+                </div>
+                <button id="sampleBtn" class="btn btn-secondary" style="margin-top: 10px;">
+                    <span style="font-size: 1.2em;">🖼️</span> サンプル画像 (Kuromi) を使う
+                </button>
+            </div>
+
+            <!-- Step 2: Settings -->
+            <div class="step-group">
+                <div class="step-title"><span class="step-number">2</span> 調整</div>
+
+                <label>しきい値 (白黒判定)</label>
+                <div class="range-wrapper">
+                    <input type="range" id="threshold" min="0" max="255" value="128">
+                    <span id="threshVal" class="value-display">128</span>
+                </div>
+                <p class="helper-text">画像の形がきれいに出るように調整してください</p>
+
+                <div style="margin-top: 16px;"></div>
+
+                <label>迷路の細かさ</label>
+                <div class="range-wrapper">
+                    <input type="range" id="difficulty" min="1" max="5" value="3" step="1">
+                    <span id="diffVal" class="value-display">3</span>
+                </div>
+            </div>
+
+            <!-- Step 3: Action -->
+            <div class="step-group">
+                <div class="step-title"><span class="step-number">3</span> 生成 & 保存</div>
+                <button id="generateBtn" class="btn btn-primary">
+                    ✨ 迷路を生成する
+                </button>
+
+                <div class="btn-group">
+                    <button id="downloadBtn" class="btn btn-secondary" disabled>
+                        💾 保存
+                    </button>
+                    <button id="printBtn" class="btn btn-secondary" disabled>
+                        🖨️ 印刷
+                    </button>
+                </div>
+
+                <div id="connectionAlert" class="alert-box">
+                    <strong>⚠️ 経路が分断されています</strong><br>
+                    スタートからゴールまで辿り着けません。<br>
+                    <button id="fixConnectionBtn" class="btn btn-danger"
+                        style="margin-top: 8px; font-size: 0.85rem; padding: 6px;">
+                        🛠️ 強制的に繋げて再生成
+                    </button>
+                </div>
+            </div>
+
+            <div
+                style="font-size: 0.85rem; color: var(--text-muted); background: #f9fafb; padding: 12px; border-radius: 8px;">
+                <strong>💡 ヒント:</strong><br>
+                生成された迷路の上をクリックすると、<span style="color:var(--accent-color); font-weight:bold;">スタート(S)</span>と<span
+                    style="color:var(--danger-color); font-weight:bold;">ゴール(G)</span>を設定できます。
+            </div>
+
+        </div>
+
+        <!-- Right Panel: Canvas -->
+        <div class="card canvas-container">
+            <div id="placeholder" class="placeholder-text">
+                <div style="font-size: 3rem; margin-bottom: 10px;">🎨</div>
+                ここに迷路が表示されます<br>
+                左のパネルから画像を読み込んでください
+            </div>
+            <canvas id="mazeCanvas" style="display: none;"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const imageLoader = document.getElementById('imageLoader');
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const placeholder = document.getElementById('placeholder');
+        const canvasContainer = document.querySelector('.canvas-container');
+
+        const thresholdSlider = document.getElementById('threshold');
+        const diffSlider = document.getElementById('difficulty');
+        const threshDisplay = document.getElementById('threshVal');
+        const diffDisplay = document.getElementById('diffVal');
+
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const printBtn = document.getElementById('printBtn');
+        const sampleBtn = document.getElementById('sampleBtn');
+        const connectionAlert = document.getElementById('connectionAlert');
+        const fixConnectionBtn = document.getElementById('fixConnectionBtn');
+
+        // State
+        let uploadedImage = null;
+        let mazeGrid = [];
+        let baseMaskGrid = [];
+        let cols, rows, cellSize;
+        let startPoint = null, endPoint = null;
+
+        // UI Event Listeners
+        thresholdSlider.addEventListener('input', (e) => threshDisplay.innerText = e.target.value);
+        diffSlider.addEventListener('input', (e) => diffDisplay.innerText = e.target.value);
+
+        // --- Image Loading ---
+
+        function loadImage(src) {
+            const img = new Image();
+            img.onload = () => {
+                uploadedImage = img;
+
+                // Canvas Setup
+                const maxWidth = 800;
+                let w = uploadedImage.width;
+                let h = uploadedImage.height;
+                if (w > maxWidth) {
+                    h = (maxWidth / w) * h;
+                    w = maxWidth;
+                }
+                canvas.width = w;
+                canvas.height = h;
+
+                // Show Canvas, Hide Placeholder
+                canvas.style.display = 'block';
+                placeholder.style.display = 'none';
+                canvasContainer.style.border = 'none'; // Remove dashed border
+                canvasContainer.style.backgroundColor = 'transparent';
+
+                // Initial Draw
+                ctx.drawImage(uploadedImage, 0, 0, w, h);
+
+                // Reset State
+                mazeGrid = [];
+                baseMaskGrid = [];
+                startPoint = null;
+                endPoint = null;
+                connectionAlert.style.display = 'none';
+
+                // Enable Buttons
+                downloadBtn.disabled = true; // Only enable after generation
+                printBtn.disabled = true;
+            }
+            img.src = src;
+        }
+
+        imageLoader.addEventListener('change', (e) => {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                loadImage(event.target.result);
+            }
+            if (e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        });
+
+        sampleBtn.addEventListener('click', () => {
+            loadImage('kuromi.png');
+        });
+
+        // --- Maze Generation ---
+
+        generateBtn.addEventListener('click', () => {
+            if (!uploadedImage) {
+                alert("まずは画像を選択してください ☝️");
+                return;
+            }
+
+            setLoadingState(true);
+
+            setTimeout(() => {
+                try {
+                    processImageToGrid();
+                    generateMazeFromGrid();
+
+                    // Success State
+                    setLoadingState(false);
+                    downloadBtn.disabled = false;
+                    printBtn.disabled = false;
+
+                    startPoint = null;
+                    endPoint = null;
+                    connectionAlert.style.display = 'none';
+                    drawMaze();
+
+                } catch (e) {
+                    console.error(e);
+                    setLoadingState(false);
+                    alert("エラーが発生しました。\n\nローカル環境で実行している場合、ブラウザのセキュリティ制限により画像処理がブロックされた可能性があります。\n\n解決策:\n1. VS CodeのLive Server拡張機能などを使用する\n2. 画像を一度PCに保存し、「画像を選択」から読み込む");
+                }
+            }, 50);
+        });
+
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '⏳ 生成中...';
+                canvas.style.opacity = '0.5';
+            } else {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '✨ 迷路を生成する';
+                canvas.style.opacity = '1';
+            }
+        }
+
+        // --- Fix Connection ---
+
+        fixConnectionBtn.addEventListener('click', () => {
+            if (!startPoint || !endPoint) return;
+
+            fixConnectionBtn.disabled = true;
+            fixConnectionBtn.innerHTML = '⏳ 計算中...';
+
+            setTimeout(() => {
+                restoreBaseGrid();
+                const bridge = findBridgePath(startPoint, endPoint);
+
+                if (bridge) {
+                    bridge.forEach(p => {
+                        if (mazeGrid[p.x][p.y]) {
+                            mazeGrid[p.x][p.y].isMask = false;
+                        }
+                    });
+                }
+
+                generateMazeFromGrid(true);
+
+                fixConnectionBtn.disabled = false;
+                fixConnectionBtn.innerHTML = '🛠️ 強制的に繋げて再生成';
+                connectionAlert.style.display = 'none';
+
+                drawMaze();
+                checkConnectivity();
+            }, 50);
+        });
+
+        // --- Export ---
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'my_maze.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+
+        // --- Interaction (Start/End) ---
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!mazeGrid || mazeGrid.length === 0) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            const c = Math.floor(x / cellSize);
+            const r = Math.floor(y / cellSize);
+
+            if (c >= 0 && c < cols && r >= 0 && r < rows) {
+                const cell = mazeGrid[c][r];
+                if (cell && !cell.isMask) {
+                    if (!startPoint) startPoint = { c, r };
+                    else if (!endPoint) endPoint = { c, r };
+                    else { startPoint = { c, r }; endPoint = null; }
+
+                    drawMaze();
+                    checkConnectivity();
+                }
+            }
+        });
+
+        // --- Core Logic (Ported from v4) ---
+
+        function processImageToGrid() {
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.drawImage(uploadedImage, 0, 0, width, height);
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+
+            const threshold = parseInt(thresholdSlider.value);
+            const isDarkPixel = new Uint8Array(width * height);
+
+            for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                if (data[i + 3] < 128 || avg > threshold) {
+                    isDarkPixel[i / 4] = 0;
+                } else {
+                    isDarkPixel[i / 4] = 1;
+                }
+            }
+
+            const isBackground = new Uint8Array(width * height);
+            const queue = [];
+
+            // Seed from edges
+            for (let x = 0; x < width; x++) {
+                checkAndPush(x, 0);
+                checkAndPush(x, height - 1);
+            }
+            for (let y = 0; y < height; y++) {
+                checkAndPush(0, y);
+                checkAndPush(width - 1, y);
+            }
+
+            function checkAndPush(x, y) {
+                const idx = y * width + x;
+                if (isDarkPixel[idx] === 0 && isBackground[idx] === 0) {
+                    isBackground[idx] = 1;
+                    queue.push(idx);
+                }
+            }
+
+            // BFS Flood Fill for Background
+            let head = 0;
+            while (head < queue.length) {
+                const currIdx = queue[head++];
+                const cx = currIdx % width;
+                const cy = Math.floor(currIdx / width);
+
+                const neighbors = [
+                    { x: cx + 1, y: cy }, { x: cx - 1, y: cy },
+                    { x: cx, y: cy + 1 }, { x: cx, y: cy - 1 }
+                ];
+
+                for (let n of neighbors) {
+                    if (n.x >= 0 && n.x < width && n.y >= 0 && n.y < height) {
+                        const nIdx = n.y * width + n.x;
+                        if (isDarkPixel[nIdx] === 0 && isBackground[nIdx] === 0) {
+                            isBackground[nIdx] = 1;
+                            queue.push(nIdx);
+                        }
+                    }
+                }
+            }
+
+            // Init Grid
+            const diffVal = parseInt(diffSlider.value);
+            cellSize = Math.max(8, Math.floor(width / (10 * diffVal)));
+            cols = Math.floor(width / cellSize);
+            rows = Math.floor(height / cellSize);
+
+            mazeGrid = [];
+            baseMaskGrid = [];
+
+            for (let x = 0; x < cols; x++) {
+                mazeGrid[x] = [];
+                baseMaskGrid[x] = [];
+                for (let y = 0; y < rows; y++) {
+                    const px = Math.floor(x * cellSize + cellSize / 2);
+                    const py = Math.floor(y * cellSize + cellSize / 2);
+                    const pIdx = py * width + px;
+
+                    const isSubject = (isBackground[pIdx] === 0);
+                    const isMask = !isSubject;
+
+                    const cellData = {
+                        x: x, y: y,
+                        visited: false,
+                        walls: { t: 1, r: 1, b: 1, l: 1 },
+                        isMask: isMask
+                    };
+
+                    mazeGrid[x][y] = cellData;
+                    baseMaskGrid[x][y] = { isMask: isMask };
+                }
+            }
+        }
+
+        function restoreBaseGrid() {
+            for (let x = 0; x < cols; x++) {
+                for (let y = 0; y < rows; y++) {
+                    mazeGrid[x][y].isMask = baseMaskGrid[x][y].isMask;
+                    mazeGrid[x][y].visited = false;
+                    mazeGrid[x][y].walls = { t: 1, r: 1, b: 1, l: 1 };
+                }
+            }
+        }
+
+        function generateMazeFromGrid(keepVisited = false) {
+            let validCells = [];
+            for (let x = 0; x < cols; x++) {
+                for (let y = 0; y < rows; y++) {
+                    if (!mazeGrid[x][y].isMask) {
+                        validCells.push(mazeGrid[x][y]);
+                        if (!keepVisited) mazeGrid[x][y].visited = false;
+                    } else {
+                        mazeGrid[x][y].visited = true;
+                    }
+                }
+            }
+
+            if (validCells.length === 0) {
+                throw new Error("有効な描画領域が見つかりませんでした。しきい値を調整してください。");
+            }
+
+            // Recursive Backtracker
+            while (true) {
+                const unvisited = validCells.find(c => !c.visited);
+                if (!unvisited) break;
+
+                let current = unvisited;
+                current.visited = true;
+                let stack = [current];
+
+                while (stack.length > 0) {
+                    const next = getUnvisitedNeighbor(current);
+                    if (next) {
+                        next.visited = true;
+                        removeWalls(current, next);
+                        stack.push(current);
+                        current = next;
+                    } else {
+                        current = stack.pop();
+                    }
+                }
+            }
+        }
+
+        function getUnvisitedNeighbor(cell) {
+            const { x, y } = cell;
+            const neighbors = [];
+            if (y > 0 && !mazeGrid[x][y - 1].visited && !mazeGrid[x][y - 1].isMask) neighbors.push(mazeGrid[x][y - 1]);
+            if (x < cols - 1 && !mazeGrid[x + 1][y].visited && !mazeGrid[x + 1][y].isMask) neighbors.push(mazeGrid[x + 1][y]);
+            if (y < rows - 1 && !mazeGrid[x][y + 1].visited && !mazeGrid[x][y + 1].isMask) neighbors.push(mazeGrid[x][y + 1]);
+            if (x > 0 && !mazeGrid[x - 1][y].visited && !mazeGrid[x - 1][y].isMask) neighbors.push(mazeGrid[x - 1][y]);
+
+            if (neighbors.length > 0) return neighbors[Math.floor(Math.random() * neighbors.length)];
+            return null;
+        }
+
+        function removeWalls(a, b) {
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            if (dx === 1) { a.walls.l = 0; b.walls.r = 0; }
+            else if (dx === -1) { a.walls.r = 0; b.walls.l = 0; }
+            if (dy === 1) { a.walls.t = 0; b.walls.b = 0; }
+            else if (dy === -1) { a.walls.b = 0; b.walls.t = 0; }
+        }
+
+        function checkConnectivity() {
+            if (!startPoint || !endPoint) {
+                connectionAlert.style.display = 'none';
+                return;
+            }
+
+            const queue = [startPoint];
+            const visited = new Set();
+            visited.add(`${startPoint.c},${startPoint.r}`);
+            let connected = false;
+
+            while (queue.length > 0) {
+                const curr = queue.shift();
+                if (curr.c === endPoint.c && curr.r === endPoint.r) {
+                    connected = true;
+                    break;
+                }
+
+                const cell = mazeGrid[curr.c][curr.r];
+                const neighbors = [];
+
+                if (!cell.walls.t) neighbors.push({ c: curr.c, r: curr.r - 1 });
+                if (!cell.walls.b) neighbors.push({ c: curr.c, r: curr.r + 1 });
+                if (!cell.walls.l) neighbors.push({ c: curr.c - 1, r: curr.r });
+                if (!cell.walls.r) neighbors.push({ c: curr.c + 1, r: curr.r });
+
+                for (let n of neighbors) {
+                    const key = `${n.c},${n.r}`;
+                    if (!visited.has(key)) {
+                        visited.add(key);
+                        queue.push(n);
+                    }
+                }
+            }
+
+            connectionAlert.style.display = connected ? 'none' : 'block';
+        }
+
+        function findBridgePath(start, end) {
+            const queue = [{ c: start.c, r: start.r, path: [] }];
+            const visited = new Set();
+            visited.add(`${start.c},${start.r}`);
+
+            while (queue.length > 0) {
+                const { c, r, path } = queue.shift();
+
+                if (c === end.c && r === end.r) {
+                    return path;
+                }
+
+                const neighbors = [
+                    { c: c, r: r - 1 },
+                    { c: c, r: r + 1 },
+                    { c: c - 1, r: r },
+                    { c: c + 1, r: r }
+                ];
+
+                for (let n of neighbors) {
+                    if (n.c >= 0 && n.c < cols && n.r >= 0 && n.r < rows) {
+                        const key = `${n.c},${n.r}`;
+                        if (!visited.has(key)) {
+                            visited.add(key);
+                            const newPath = [...path, { x: n.c, y: n.r }];
+                            queue.push({ c: n.c, r: n.r, path: newPath });
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function drawMaze() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (uploadedImage) {
+                ctx.save();
+                ctx.globalAlpha = 0.2;
+                ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = "square";
+
+            ctx.beginPath();
+            for (let x = 0; x < cols; x++) {
+                for (let y = 0; y < rows; y++) {
+                    const cell = mazeGrid[x][y];
+                    if (cell.isMask) continue;
+
+                    const px = x * cellSize;
+                    const py = y * cellSize;
+
+                    if (cell.walls.t) { ctx.moveTo(px, py); ctx.lineTo(px + cellSize, py); }
+                    if (cell.walls.r) { ctx.moveTo(px + cellSize, py); ctx.lineTo(px + cellSize, py + cellSize); }
+                    if (cell.walls.b) { ctx.moveTo(px + cellSize, py + cellSize); ctx.lineTo(px, py + cellSize); }
+                    if (cell.walls.l) { ctx.moveTo(px, py + cellSize); ctx.lineTo(px, py); }
+                }
+            }
+            ctx.stroke();
+
+            if (startPoint) drawMarker(startPoint, "#10b981", "S");
+            if (endPoint) drawMarker(endPoint, "#ef4444", "G");
+        }
+
+        function drawMarker(p, color, label) {
+            const cx = p.c * cellSize + cellSize / 2;
+            const cy = p.r * cellSize + cellSize / 2;
+            const r = cellSize * 0.35;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            ctx.fillStyle = "white";
+            ctx.font = "bold " + (cellSize * 0.6) + "px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(label, cx, cy + 1);
+        }
+    </script>
+</body>
+
+</html>
